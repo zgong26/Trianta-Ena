@@ -13,15 +13,15 @@ public class PlayerDeck extends PokerDeck {
 		if (c1 + c2 == 2 || c1 + c3 == 2 || c2 + c3 == 2)// can't have two aces to exclude corner
 															// case such as Ace Ace 9
 			return false;
+		c1 = c1 > 10 ? 10 : c1;
+		c2 = c2 > 10 ? 10 : c2;
+		c3 = c3 > 10 ? 10 : c3;
 		if (c1 == 1)
 			c1 = 11;
 		if (c2 == 1)
 			c2 = 11;
 		if (c3 == 1)
 			c3 = 11;
-		c1 = c1 > 10 ? 10 : c1;
-		c2 = c2 > 10 ? 10 : c2;
-		c3 = c3 > 10 ? 10 : c3;
 		return c1 + c2 + c3 == 31;
 	}
 

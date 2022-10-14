@@ -23,15 +23,18 @@ public class TEGame {
 	public void entry() {
 		initialize();
 		// distribute the first card
-		while (true) {
+		while (players.size() > 1) {
 			distributeFirstCard();
 			firstBet();
 			if (!distributeNextTwoCards()) {
 				body();
 			}
-			gameover();
+			boolean over = gameover();
+			if (over)
+				break;
 			rotate();
 		}
+		System.out.println("Game Over");
 
 		// testing
 		// Banker b = (Banker) players.get(0);
@@ -119,10 +122,13 @@ public class TEGame {
 				continue;
 			}
 			PokerPlayer p = (PokerPlayer) players.get(i);
-			System.out.printf("Player %s, your cards are: \n%s\n", p.getName(), p.getFaceupCards());
+			int[] arr = p.getDeck().getCount();
+			String val = arr[0] == arr[1] ? String.valueOf(arr[0])
+					: String.valueOf(arr[0]) + " or " + String.valueOf(arr[1]);
+			System.out.printf("Player %s, your cards are: \n%sValue: %s\n\n", p.getName(), p.getFaceupCards(), val);
 			if (p.getDeck().isNaturalTE()) {
-				System.out.println("Congratulations, you got Trianta Ena!!");
-				p.addScore(bets[i] * 2);
+				System.out.println("Congratulations, you got Trianta Ena!!\n");
+				p.addScore(bets[i]);
 				b.subScore(bets[i]);
 				continue;
 			} else {
@@ -133,7 +139,11 @@ public class TEGame {
 				boolean busted = false;
 				while (!res.equals("stand")) {
 					busted = p.hit(b, false);
-					System.out.printf("Your cards are: \n%s\n", p.getFaceupCards());
+					arr = p.getDeck().getCount();
+					val = arr[0] == arr[1] ? String.valueOf(arr[0])
+							: arr[0] <= 31 ? String.valueOf(arr[0]) + " or " + String.valueOf(arr[1])
+									: String.valueOf(arr[1]);
+					System.out.printf("Your cards are: \n%sValue: %s\n\n", p.getFaceupCards(), val);
 					if (busted)
 						break;
 					System.out.println("Would you like to hit or stand? (Enter \"hit\" or \"stand\")");
@@ -145,9 +155,9 @@ public class TEGame {
 					b.addScore(bets[i]);
 					bets[i] = 0;
 				} else {
-					System.out.println("Stand! Current card value is " + (p.getDeck().getCount()[0] <= 31
-							? p.getDeck().getCount()[0]
-							: p.getDeck().getCount()[1]) + "\n");
+					System.out.println("Stand! Current card value is "
+							+ (p.getDeck().getCount()[0] <= 31 ? p.getDeck().getCount()[0] : p.getDeck().getCount()[1])
+							+ "\n");
 				}
 			}
 		}
@@ -189,18 +199,57 @@ public class TEGame {
 		}
 	}
 
-	private void gameover() {
+	private boolean gameover() {
 		// reset the game
 		Banker b = (Banker) players.get(bankerPos);
 		System.out.printf("\nMoney summary:\nBanker %s: %d dollars\n", b.getName(), b.getScore());
 		for (int i = (bankerPos + 1) % players.size(); i != bankerPos; i = (i + 1) % players.size()) {
 			PokerPlayer p = (PokerPlayer) players.get(i);
-			System.out.printf("Player %s: %d dollars\n", p.getName(), p.getScore());
-			p.clear();
+			if (p.getScore() > 0) {
+				System.out.printf("Player %s: %d dollars\n", p.getName(), p.getScore());
+				p.clear();
+			} else {
+				System.out.printf("Player %s: %d dollars(Kicked from the game)\n", p.getName(), p.getScore());
+				kick(i);
+				i--;
+			}
 		}
-		System.out.println("");
+		if (players.size() <= 1) {
+			return true;
+		}
+		System.out.println("Enter player's name to cashout, enter 'no' to continue the game");
+		String cashout = in.nextLine();
+		while (!cashout.equals("no")) {
+			while (!cashOut(cashout) && !cashout.equals("no")) {
+				System.out.println("Invalid player, please re-enter the name, enter 'no' to stop");
+				cashout = in.nextLine();
+			}
+			if (cashout.equals("no"))
+				break;
+			System.out.println("Anyone else to cashout? Enter 'no' to continue");
+			cashout = in.nextLine();
+		}
+
+		System.out.println("Round over");
 		Arrays.fill(bets, 0);
 		b.clear();
+		return players.size() <= 1;
+	}
+
+	private void kick(int pos) {
+		players.remove(pos);
+	}
+
+	private boolean cashOut(String name) {
+		for (int i = (bankerPos + 1) % players.size(); i != bankerPos; i = (i + 1) % players.size()) {
+			PokerPlayer p = (PokerPlayer) players.get(i);
+			if (name.equals(p.getName())) {
+				System.out.printf("Player %s cashout successfully!\n", name);
+				kick(i);
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private void rotate() {
