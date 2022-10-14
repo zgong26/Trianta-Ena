@@ -52,8 +52,22 @@ public class Banker extends Player {
 		return cardValue;
 	}
 
+	public PlayerDeck getDeck() {
+		return playerdeck;
+	}
+
 	public String getCards() {
 		return playerdeck.toString();
 	}
 
+	public String getFaceupCards() {
+		return playerdeck.getFaceupCards();
+	}
+
+	public void clear() {
+		pokerdeck.clear();
+		pokerdeck.initializeDeck();
+		pokerdeck.resuffle();
+		playerdeck.clear();
+	}
 }

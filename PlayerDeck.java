@@ -10,10 +10,19 @@ public class PlayerDeck extends PokerDeck {
 		int c1 = deck.get(0).getRank();
 		int c2 = deck.get(1).getRank();
 		int c3 = deck.get(2).getRank();
-		if (c1 + c2 == 2 || c1 + c3 == 2 || c2 + c3 == 2 || c1 + c2 + c3 != 31)// can't have two aces to exclude corner
-																				// case such as Ace Ace 9
+		if (c1 + c2 == 2 || c1 + c3 == 2 || c2 + c3 == 2)// can't have two aces to exclude corner
+															// case such as Ace Ace 9
 			return false;
-		return true;
+		if (c1 == 1)
+			c1 = 11;
+		if (c2 == 1)
+			c2 = 11;
+		if (c3 == 1)
+			c3 = 11;
+		c1 = c1 > 10 ? 10 : c1;
+		c2 = c2 > 10 ? 10 : c2;
+		c3 = c3 > 10 ? 10 : c3;
+		return c1 + c2 + c3 == 31;
 	}
 
 	public int[] getCount() {

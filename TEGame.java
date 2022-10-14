@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Scanner;
 
 public class TEGame {
@@ -21,40 +22,46 @@ public class TEGame {
 
 	public void entry() {
 		initialize();
-
 		// distribute the first card
-		distributeFirstCard();
-		firstBet();
-		distributeNextTwoCards();
-		gameloop();
+		while (true) {
+			distributeFirstCard();
+			firstBet();
+			if (!distributeNextTwoCards()) {
+				body();
+			}
+			gameover();
+			rotate();
+		}
 
 		// testing
-		Banker b = (Banker) players.get(0);
-		PokerPlayer p1 = (PokerPlayer) players.get(1);
-		System.out.println(b.getCards());
-		System.out.println(p1.getCards());
-		System.out.println(p1.getScore());
+		// Banker b = (Banker) players.get(0);
+		// PokerPlayer p1 = (PokerPlayer) players.get(1);
+		// System.out.println("\n\n" + b.getCards());
+		// System.out.println(p1.getCards());
+		// System.out.println(p1.getScore());
 	}
 
 	private void initialize() {
 		bankerPos = 0;
 		players.add(new Banker("p1", bankerMoney));
-		System.out.println("\nBanker p1 added");
+		System.out.println("Banker p1 added");
 		for (int i = 2; i <= numOfPlayers; i++) {
 			String name = "p" + i;
 			players.add(new PokerPlayer(name, playerMoney));
 			System.out.printf("Player %s added\n", name);
 		}
-		System.out.println("");
+		System.out.println("\nGame start!\n");
 	}
 
 	private void distributeFirstCard() {
 		Banker b = (Banker) players.get(bankerPos);
 		b.hit(false);
+		System.out.printf("Banker %s's first card: %s\n", b.getName(), b.getCards());
 		int i = (bankerPos + 1) % players.size();
 		for (int j = (bankerPos + 1) % players.size(); j != bankerPos; j = (j + 1) % players.size()) {
 			PokerPlayer p = (PokerPlayer) players.get(j);
-			p.hit((Banker) players.get(0), true);
+			p.hit(b, true);
+			// System.out.printf("Player %s's first card: %s\n" ,p.getName(),p.getCards());
 		}
 	}
 
@@ -63,23 +70,26 @@ public class TEGame {
 		bets[bankerPos] = -1;
 		// int i = (bankerPos + 1) % players.size();
 		for (int i = (bankerPos + 1) % players.size(); i != bankerPos; i = (i + 1) % players.size()) {
-			Player p = (PokerPlayer) players.get(i);
-			System.out.println("How much would you like to bet? (Enter 0 for fold)");
+			PokerPlayer p = (PokerPlayer) players.get(i);
+			System.out.printf("Player %s, your first card is %s\n", p.getName(), p.getFaceupCards());
+			System.out.println("How much would you like to bet? (Enter 0 for fold)\nYou currently have " + p.getScore()
+					+ " dollars ");
 			int bet = in.nextInt();
 			while (bet > p.getScore()) {
 				System.out.printf("You have only %d dollars, please rebet: \n", p.getScore());
 				bet = in.nextInt();
 			}
+			in.nextLine();
 			if (bet <= 0) {
 				bets[i] = 0;
 			} else {
 				bets[i] = bet;
-				p.subScore(bet);
+				// p.subScore(bet);
 			}
 		}
 	}
 
-	private void distributeNextTwoCards() {
+	private boolean distributeNextTwoCards() {
 		Banker b = (Banker) players.get(bankerPos);
 		for (int i = 0; i < 2; i++) {
 			for (int j = (bankerPos + 1) % players.size(); j != bankerPos; j = (j + 1) % players.size()) {
@@ -87,13 +97,148 @@ public class TEGame {
 				if (bets[j] > 0)
 					p.hit(b, false);
 			}
+			b.hit(true);
+		}
+		// return true if the banker gets trianta ena, and game over
+		boolean over = b.getDeck().isNaturalTE();
+		if (over) {
+			System.out.println("The dealer gets Trianta Ena! All players lose");
+			for (int i = (bankerPos + 1) % players.size(); i != bankerPos; i = (i + 1) % players.size()) {
+				PokerPlayer p = (PokerPlayer) players.get(i);
+				p.subScore(bets[i]);
+				b.addScore(bets[i]);
+			}
+		}
+		return over;
+	}
+
+	private void body() {
+		Banker b = (Banker) players.get(bankerPos);
+		for (int i = (bankerPos + 1) % players.size(); i != bankerPos; i = (i + 1) % players.size()) {
+			if (bets[i] <= 0) {
+				continue;
+			}
+			PokerPlayer p = (PokerPlayer) players.get(i);
+			System.out.printf("Player %s, your cards are: \n%s\n", p.getName(), p.getFaceupCards());
+			if (p.getDeck().isNaturalTE()) {
+				System.out.println("Congratulations, you got Trianta Ena!!");
+				p.addScore(bets[i] * 2);
+				b.subScore(bets[i]);
+				continue;
+			} else {
+				System.out.printf("Banker's card: \n%s\n", b.getCards());
+				System.out.println("Would you like to hit or stand? (Enter \"hit\" or \"stand\")");
+				String res = in.nextLine().toLowerCase();
+				// res = in.nextLine().toLowerCase();
+				boolean busted = false;
+				while (!res.equals("stand")) {
+					busted = p.hit(b, false);
+					System.out.printf("Your cards are: \n%s\n", p.getFaceupCards());
+					if (busted)
+						break;
+					System.out.println("Would you like to hit or stand? (Enter \"hit\" or \"stand\")");
+					res = in.nextLine().toLowerCase();
+				}
+				if (busted) {
+					System.out.println("Busted!\n");
+					p.subScore(bets[i]);
+					b.addScore(bets[i]);
+					bets[i] = 0;
+				} else {
+					System.out.println("Stand! Current card value is " + (p.getDeck().getCount()[0] <= 31
+							? p.getDeck().getCount()[0]
+							: p.getDeck().getCount()[1]) + "\n");
+				}
+			}
+		}
+		int bankerValue = b.BankerTurn();
+		System.out.printf("Banker's card: \n%s\n", b.getFaceupCards());
+		if (bankerValue > 31) {
+			System.out.println("Banker busted! All remaining players win!");
+			int loss = 0;
+			for (int i = (bankerPos + 1) % players.size(); i != bankerPos; i = (i + 1) % players.size()) {
+				if (bets[i] <= 0)// skip folded player and busted player
+					continue;
+				PokerPlayer p = (PokerPlayer) players.get(i);
+				System.out.printf("Player %s gets %d dollars!\n", p.getName(), bets[i]);
+				p.addScore(bets[i]);
+				b.subScore(bets[i]);
+				loss += bets[i];
+			}
+			System.out.printf("Banker %s loses %d dollars!\n", b.getName(), loss);
+		} else {
+			System.out.println("Banker's current card value: " + bankerValue);
+			for (int i = (bankerPos + 1) % players.size(); i != bankerPos; i = (i + 1) % players.size()) {
+				if (bets[i] <= 0)
+					continue;
+				PokerPlayer p = (PokerPlayer) players.get(i);
+				int pVal = p.getValue();
+				if (bankerValue >= pVal) {
+					System.out.printf("Player %s loses(%d against %d). Lose %d dollars!\n", p.getName(), pVal,
+							bankerValue, bets[i]);
+
+					p.subScore(bets[i]);
+					b.addScore(bets[i]);
+				} else {
+					System.out.printf("Player %s wins(%d against %d). Win %d dollars!\n", p.getName(), pVal,
+							bankerValue, bets[i]);
+					p.addScore(bets[i]);
+					b.subScore(bets[i]);
+				}
+			}
 		}
 	}
 
-	private void gameloop() {
+	private void gameover() {
+		// reset the game
 		Banker b = (Banker) players.get(bankerPos);
-		for (int i = 0; i < players.size(); i++) {
+		System.out.printf("\nMoney summary:\nBanker %s: %d dollars\n", b.getName(), b.getScore());
+		for (int i = (bankerPos + 1) % players.size(); i != bankerPos; i = (i + 1) % players.size()) {
+			PokerPlayer p = (PokerPlayer) players.get(i);
+			System.out.printf("Player %s: %d dollars\n", p.getName(), p.getScore());
+			p.clear();
+		}
+		System.out.println("");
+		Arrays.fill(bets, 0);
+		b.clear();
+	}
 
+	private void rotate() {
+		Banker b = (Banker) players.get(bankerPos);
+		int bankerMoney = b.getScore();
+		boolean exist = true;
+		int maxMoney = Integer.MIN_VALUE;
+		int index = 0;
+		boolean[] visited = new boolean[players.size()];
+		Arrays.fill(visited, false);
+		while (exist) {
+			maxMoney = Integer.MIN_VALUE;
+			for (int i = (bankerPos + 1) % players.size(); i != bankerPos; i = (i + 1) % players.size()) {
+				PokerPlayer p = (PokerPlayer) players.get(i);
+				if (p.getScore() > maxMoney && !visited[i]) {
+					maxMoney = p.getScore();
+					index = i;
+				}
+			}
+			if (maxMoney <= bankerMoney) {
+				exist = false;
+			} else {
+				PokerPlayer p = (PokerPlayer) players.get(index);
+				System.out.printf(
+						"Player %s, you have more money than the banker, would you like to be the banker? (y/N)\n",
+						p.getName());
+				String ans = in.nextLine().toLowerCase();
+				if (ans.equals("y")) {
+					Banker pre = (Banker) players.get(bankerPos);
+					players.set(bankerPos, new PokerPlayer(pre.getName(), pre.getScore()));
+					bankerPos = index;
+					players.set(bankerPos, new Banker(p.getName(), p.getScore()));
+					System.out.printf("Player %s is now the new banker.\n", p.getName());
+					exist = false;
+				} else {
+					visited[index] = true;
+				}
+			}
 		}
 	}
 }

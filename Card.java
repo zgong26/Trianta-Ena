@@ -52,6 +52,10 @@ public class Card {
 		return fold;
 	}
 
+	public boolean isFold() {
+		return fold;
+	}
+
 	public String toString() {
 		if (fold) {
 			return "Folded Card";

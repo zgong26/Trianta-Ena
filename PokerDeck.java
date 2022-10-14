@@ -61,6 +61,19 @@ public class PokerDeck implements Deck {
 		return rand;
 	}
 
+	public String getFaceupCards() {
+		String res = "";
+		for (Card c : deck) {
+			if (c.isFold()) {
+				c.flip();
+				res += c + "\n";
+				c.flip();
+			} else
+				res += c + "\n";
+		}
+		return res;
+	}
+
 	public String toString() {
 		String res = "";
 		for (Card c : deck) {
