@@ -6,6 +6,7 @@ public class Main {
 		System.out.println("How many players(including Banker) do you want?");
 		int numOfPlayers = in.nextInt();
 		TEGame game = new TEGame(numOfPlayers, 100);
-		game.entry();
+		game.start();
+		game.end();
 	}
 }

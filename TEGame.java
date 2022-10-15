@@ -2,7 +2,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Scanner;
 
-public class TEGame {
+public class TEGame implements Game {
 	private ArrayList<Player> players;
 	private int numOfPlayers;
 	private int playerMoney;
@@ -20,7 +20,7 @@ public class TEGame {
 		in = new Scanner(System.in);
 	}
 
-	public void entry() {
+	public void start() {
 		initialize();
 		// distribute the first card
 		while (players.size() > 1) {
@@ -29,19 +29,11 @@ public class TEGame {
 			if (!distributeNextTwoCards()) {
 				body();
 			}
-			boolean over = gameover();
+			boolean over = endOfRound();
 			if (over)
 				break;
 			rotate();
 		}
-		System.out.println("Game Over");
-
-		// testing
-		// Banker b = (Banker) players.get(0);
-		// PokerPlayer p1 = (PokerPlayer) players.get(1);
-		// System.out.println("\n\n" + b.getCards());
-		// System.out.println(p1.getCards());
-		// System.out.println(p1.getScore());
 	}
 
 	private void initialize() {
@@ -199,7 +191,7 @@ public class TEGame {
 		}
 	}
 
-	private boolean gameover() {
+	private boolean endOfRound() {
 		// reset the game
 		Banker b = (Banker) players.get(bankerPos);
 		System.out.printf("\nMoney summary:\nBanker %s: %d dollars\n", b.getName(), b.getScore());
@@ -289,5 +281,9 @@ public class TEGame {
 				}
 			}
 		}
+	}
+
+	public void end() {
+		System.out.println("Game Over");
 	}
 }

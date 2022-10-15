@@ -1,7 +1,7 @@
 //a generic player
 public class Player {
 	protected String name;
-	public int score;
+	protected int score;
 
 	public Player(String name, int score) {
 		this.name = name;
